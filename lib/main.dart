@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:provider_example_131/counter_provider.dart';
+import 'package:provider_example_131/providers/counter_provider.dart';
+import 'package:provider_example_131/providers/list_data_provider.dart';
 import 'package:provider_example_131/second_page.dart';
 
 void main() {
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => CounterProvider(),
-      child: ChangeNotifierProvider(
-        create: (context) => CounterProvider(),
-        child: const MyApp(),
-      ),
-    )
+    MultiProvider(providers: [
+      ChangeNotifierProvider(create: (context)=>CounterProvider()),
+      ChangeNotifierProvider(create: (context)=>ListDataProvider()),
+      ///
+      ///
+      ///
+      ///
+      ///
+    ], child: const MyApp(),)
   );
 }
 
@@ -33,6 +36,8 @@ class MyApp extends StatelessWidget {
 }
 
 class HomePage extends StatelessWidget {
+  var nameController = TextEditingController();
+  var classController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -42,46 +47,69 @@ class HomePage extends StatelessWidget {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text('Provider'),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              //get (listen)
-              '${context.watch<CounterProvider>().getCountValue()}',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
+      body: Consumer<ListDataProvider>(
+        builder: (_, provider, __){
+          List<Map<String,dynamic>> data = provider.getMyListData();
+          return ListView.builder(
+            itemCount: data.length,
+              itemBuilder: (ctx, index){
+            return InkWell(
+              onTap: (){
+                nameController.text = data[index]['Name'];
+                classController.text = data[index]['Class'];
 
-            ElevatedButton(onPressed: (){
-              Navigator.push(context, MaterialPageRoute(builder: (context) => SecondPage(),));
-            }, child: Text('Next Page'))
-          ],
-        ),
+                showModalBottomSheet(context: context, builder: (_){
+                  return Container(
+                    height: 250,
+                    child: Column(
+                      children: [
+                        Text('Update Data'),
+                        SizedBox(
+                          height: 21,
+                        ),
+                        TextField(
+                          controller: nameController,
+                        ),
+                        SizedBox(
+                          height: 11,
+                        ),
+                        TextField(
+                          controller: classController,
+                        ),
+                        ElevatedButton(onPressed: (){
+                          var dataToBeUpdated = {
+                            "Name": nameController.text.toString(),
+                            "Class": classController.text.toString()
+                          };
+                          context.read<ListDataProvider>().updateData(dataToBeUpdated, index);
+                        }, child: Text('Update'))
+                      ],
+                    ),
+                  );
+                });
+              },
+              child: ListTile(
+                title: Text('${data[index]['Name']}'),
+                subtitle: Text('Class: ${data[index]['Class']}'),
+                trailing: InkWell(
+                  onTap: (){
+                    context.read<ListDataProvider>().removeData(index);
+                  },
+                    child: Icon(Icons.delete, color: Colors.red,)),
+              ),
+            );
+          });
+        },
       ),
-      floatingActionButton: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          FloatingActionButton(
-            onPressed: (){
-              //set
-              context.read<CounterProvider>().decrementCount();
-            },
-            tooltip: 'Decrement',
-            child: const Icon(Icons.remove),
-          ),
-
-          FloatingActionButton(
-            onPressed: (){
-              //set
-              Provider.of<CounterProvider>(context, listen: false).incrementCount();
-            },
-            tooltip: 'Increment',
-            child: const Icon(Icons.add),
-          ),
-        ],
+      floatingActionButton: FloatingActionButton(
+        onPressed: (){
+          Map<String, dynamic> newData = {
+            "Name": "Raman",
+            "Class": "X"
+          };
+          context.read<ListDataProvider>().addData(newData);
+        },
+        child: Icon(Icons.add),
       )
     );
   }

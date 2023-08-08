@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 
 class CounterProvider extends ChangeNotifier{
 
+
   //state
   int _count = 0;
+
 
   //change
   void incrementCount(){
